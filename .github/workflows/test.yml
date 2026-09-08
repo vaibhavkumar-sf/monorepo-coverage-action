@@ -7,9 +7,11 @@ on:
 
 permissions:
   contents: read
+  pull-requests: write
 
 jobs:
-  test:
+  unit:
+    name: end to end against a stub API
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -18,3 +20,42 @@ jobs:
           node-version: 24
       - run: node --check index.js
       - run: node test/e2e.js
+
+  # Runs the action the way a consumer does, so the node24 runtime declaration and
+  # the real action execution path are covered, not just the script in isolation.
+  action:
+    name: run the action on a fixture
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create fixture coverage
+        run: |
+          set -euo pipefail
+          mkdir -p packages/core/coverage services/auth-service/coverage services/no-tests-service
+          for f in packages/core services/auth-service; do
+            echo '{"/github/workspace/src/a.ts":{"path":"/github/workspace/src/a.ts"}}' > "$f/coverage/coverage-final.json"
+          done
+
+      - id: coverage
+        uses: ./
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          report-command: node test/fake-nyc.js
+
+      - name: Assert the action's results
+        env:
+          WORKSPACES: ${{ steps.coverage.outputs.workspaces }}
+          LINES: ${{ steps.coverage.outputs.lines }}
+          COMMENT_URL: ${{ steps.coverage.outputs['comment-url'] }}
+          EVENT: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          echo "workspaces=$WORKSPACES lines=$LINES comment=$COMMENT_URL"
+          [ "$WORKSPACES" = "2" ]                       # the workspace without coverage is skipped
+          [ "$LINES" = "93" ]
+          [ ! -f .nyc_output/no-tests-service.json ]
+          grep -q '"./src/a.ts"' .nyc_output/core.json  # /github/workspace rewritten
+          if [ "$EVENT" = "pull_request" ]; then
+            [ -n "$COMMENT_URL" ]                       # commented on this pull request
+          fi
