@@ -1,5 +1,7 @@
 # monorepo-coverage-action
 
+[![test](https://github.com/vaibhavkumar-sf/monorepo-coverage-action/actions/workflows/test.yml/badge.svg)](https://github.com/vaibhavkumar-sf/monorepo-coverage-action/actions/workflows/test.yml)
+
 Merges per-workspace [nyc](https://github.com/istanbuljs/nyc) coverage in a monorepo and posts the totals as a pull request comment.
 
 - **Works on `workflow_dispatch` runs.** The pull request can be passed as an input, so the action does not depend on a `pull_request` event payload being present.
