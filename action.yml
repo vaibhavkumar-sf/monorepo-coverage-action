@@ -1,0 +1,59 @@
+name: 'Monorepo coverage comment'
+description: 'Merge per-workspace nyc coverage in a monorepo and post the totals as a pull request comment.'
+author: 'vaibhavkumar-sf'
+branding:
+  icon: 'percent'
+  color: 'green'
+
+inputs:
+  token:
+    description: 'Token used to read and write pull request comments. Usually secrets.GITHUB_TOKEN.'
+    required: true
+  pr-number:
+    description: >-
+      Pull request to comment on. Required for workflow_dispatch runs, whose event payload has no
+      pull request. Defaults to the pull request in the event payload when omitted.
+    required: false
+    default: ''
+  folders:
+    description: 'Comma separated directories to scan for workspaces.'
+    required: false
+    default: 'packages,services,facades'
+  working-directory:
+    description: 'Directory to run in.'
+    required: false
+    default: '.'
+  report-command:
+    description: 'Command that writes the coverage summary from .nyc_output.'
+    required: false
+    default: 'npx nyc report --reporter json-summary'
+  summary-path:
+    description: 'Path of the summary written by report-command.'
+    required: false
+    default: 'coverage/coverage-summary.json'
+  title:
+    description: 'Heading of the comment.'
+    required: false
+    default: 'Coverage report'
+  sticky:
+    description: 'Update the previous comment from this action instead of adding a new one.'
+    required: false
+    default: 'true'
+
+outputs:
+  lines:
+    description: 'Line coverage percentage.'
+  statements:
+    description: 'Statement coverage percentage.'
+  functions:
+    description: 'Function coverage percentage.'
+  branches:
+    description: 'Branch coverage percentage.'
+  workspaces:
+    description: 'Number of workspaces whose coverage was merged.'
+  comment-url:
+    description: 'URL of the comment that was created or updated, empty if none was posted.'
+
+runs:
+  using: 'node24'
+  main: 'index.js'
